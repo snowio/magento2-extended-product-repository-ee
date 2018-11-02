@@ -153,7 +153,7 @@ class ProductDataMapperPluginTest extends TestCase
     }
 
     /**
-     * Test that a product valid special price payload returns true (success).
+     * Test that a product valid special price payload returns null (void method).
      *
      * @author Liam Toohey (lt@amp.co)
      */
@@ -200,6 +200,9 @@ class ProductDataMapperPluginTest extends TestCase
             $this->product
         );
 
+        /**
+         * Successful calls to aroundMapProductDataForSave return void.
+         */
         $this->assertEquals(null, $result);
     }
 
