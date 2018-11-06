@@ -9,19 +9,27 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
 use Magento\Catalog\Api\Data\SpecialPriceInterface;
 use Magento\CatalogStaging\Model\ResourceModel\Product\Price\SpecialPrice;
+use Magento\Store\Api\StoreRepositoryInterface;
 
 class ProductDataMapperPlugin
 {
     /** @var SpecialPrice  */
     private $stagingSpecialPriceModel;
+    /** @var StoreRepositoryInterface  */
+    private $storeRepository;
 
     /**
      * ProductDataMapperPlugin constructor.
      * @param SpecialPrice $stagingSpecialPriceModel
+     * @param StoreRepositoryInterface $storeRepository
      */
-    public function __construct(SpecialPrice $stagingSpecialPriceModel)
+    public function __construct(
+        SpecialPrice $stagingSpecialPriceModel,
+        StoreRepositoryInterface $storeRepository
+    )
     {
         $this->stagingSpecialPriceModel = $stagingSpecialPriceModel;
+        $this->storeRepository = $storeRepository;
     }
 
     /**
@@ -65,7 +73,18 @@ class ProductDataMapperPlugin
                     'Missing data from special_price extension attribute payload'
                 ));
             }
+
+            /**
+             * $price->getStoreId() === store code, not the ID.
+             *
+             * This is because we only have access to the store code in mapping.
+             * We have to name this store_id in order for the extension attribute
+             * declaration to implement Magento\Catalog\Api\Data\SpecialPriceInterface
+             */
+            $store = $this->storeRepository->get($price->getStoreId());
+            $price->setStoreId($store->getId());
         }
+
         /**
          * $prices = [
          *     \Magento\Catalog\Api\Data\SpecialPriceInterface,
