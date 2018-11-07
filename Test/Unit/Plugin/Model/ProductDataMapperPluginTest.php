@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase as TestCase;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Api\Data\ProductExtensionInterface;
-use MiniSpares\ExtendedProductRepositoryEE\Plugin\Model\ProductDataMapperPlugin as Plugin;
+use SnowIO\ExtendedProductRepositoryEE\Plugin\Model\ProductDataMapperPlugin as Plugin;
 use SnowIO\ExtendedProductRepository\Model\ProductDataMapper;
 use Magento\Catalog\Api\Data\SpecialPriceInterface;
 use Magento\Framework\Exception\LocalizedException;
