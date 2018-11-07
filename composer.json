@@ -13,8 +13,7 @@
         "php": ">=7",
         "magento/framework": "^100|^101",
         "magento/module-catalog": "^101|^102",
-        "magento/module-eav": "^100|^101",
-        "magento/module-configurable-product": "^100",
+        "magento/module-catalog-staging": "^100.2.2",
         "snowio/magento2-extended-product-repository": "^2.2.1"
     },
     "require-dev": {
