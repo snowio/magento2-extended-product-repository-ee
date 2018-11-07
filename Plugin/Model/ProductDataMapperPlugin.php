@@ -74,8 +74,6 @@ class ProductDataMapperPlugin
         }
 
         $specialPrices = [];
-        $specialPriceClone = clone $this->specialPrice;
-        
         /** @var \SnowIO\ExtendedProductRepositoryEE\Api\Data\SpecialPriceMappingInterface $price */
         foreach ($prices as $price) {
             if (!$this->validatePricePayload($price)) {
@@ -83,7 +81,6 @@ class ProductDataMapperPlugin
                     'Missing data from special_price extension attribute payload'
                 ));
             }
-
             /**
              * IMPORTANT:
              *
@@ -100,13 +97,13 @@ class ProductDataMapperPlugin
                 $store = $this->storeRepository->get($price->getStoreId());
                 $price->setStoreId($store->getId());
             }
-
             /**
              * We now need to transform SpecialPriceMappingInterface into vanilla SpecialPriceInterface.
              * This is to ensure vanilla update functionality works.
              *
              * @see \Magento\CatalogStaging\Model\ResourceModel\Product\Price\SpecialPrice::priceSelectionsAreEqual
              */
+            $specialPriceClone = clone $this->specialPrice;
             $specialPrices[] = $specialPriceClone
                 ->setPrice($price->getPrice())
                 ->setStoreId($price->getStoreId())
