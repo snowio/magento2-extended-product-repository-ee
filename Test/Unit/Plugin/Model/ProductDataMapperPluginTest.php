@@ -11,6 +11,8 @@ use SnowIO\ExtendedProductRepository\Model\ProductDataMapper;
 use Magento\Catalog\Api\Data\SpecialPriceInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\CatalogStaging\Model\ResourceModel\Product\Price\SpecialPrice;
+use Magento\Store\Model\StoreRepository;
+use Magento\Store\Model\Store;
 
 class ProductDataMapperPluginTest extends TestCase
 {
@@ -20,6 +22,8 @@ class ProductDataMapperPluginTest extends TestCase
     private $subject;
     private $plugin;
     private $stagingSpecialPriceModel;
+    private $storeRepository;
+    private $store;
 
     protected function setUp()
     {
@@ -61,17 +65,20 @@ class ProductDataMapperPluginTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        /**
-         * This method is not tested (out of scope, core Magento method).
-         * If we make it to this call, the payload is valid and this function should return true.
-         */
-        $this->stagingSpecialPriceModel
-            ->expects($this->any())
-            ->method('update')
-            ->willReturn(true);
+        $this->storeRepository = $this
+            ->getMockBuilder(StoreRepository::class)
+            ->setMethods(['get'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->store = $this
+            ->getMockBuilder(Store::class)
+            ->setMethods(['getId'])
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $this->subject = $om->getObject(ProductDataMapper::class);
-        $this->plugin = new Plugin($this->stagingSpecialPriceModel);
+        $this->plugin = new Plugin($this->stagingSpecialPriceModel, $this->storeRepository);
     }
 
     /**
@@ -160,39 +167,63 @@ class ProductDataMapperPluginTest extends TestCase
     public function testMapProductDataForSaveValidPayload()
     {
         $this->specialPrice
-            ->expects($this->any())
+            ->expects($this->once())
             ->method('getPrice')
             ->willReturn(10.00);
 
         $this->specialPrice
             ->expects($this->any())
             ->method('getStoreId')
-            ->willReturn(1);
+            ->willReturn("ms_uk");
 
         $this->specialPrice
-            ->expects($this->any())
+            ->expects($this->once())
             ->method('getSku')
             ->willReturn('SKUTEST');
 
         $this->specialPrice
-            ->expects($this->any())
+            ->expects($this->once())
             ->method('getPriceFrom')
             ->willReturn('2018-12-12 13:48:05');
 
         $this->specialPrice
-            ->expects($this->any())
+            ->expects($this->once())
             ->method('getPriceTo')
             ->willReturn('2018-12-19 00:00:00');
 
         $this->extensionAttributes
-            ->expects($this->any())
+            ->expects($this->once())
             ->method('getSpecialPrice')
             ->willReturn([$this->specialPrice]);
 
         $this->product
-            ->expects($this->any())
+            ->expects($this->once())
             ->method('getExtensionAttributes')
             ->willReturn($this->extensionAttributes);
+
+        $this->store
+            ->expects($this->once())
+            ->method('getId')
+            ->willReturn("1");
+
+        $this->storeRepository
+            ->expects($this->once())
+            ->method('get')
+            ->willReturn($this->store);
+
+        /**
+         * This method is not tested (out of scope, core Magento method).
+         * If we make it to this call, the payload is valid and this function should return true.
+         */
+        $this->stagingSpecialPriceModel
+            ->expects($this->once())
+            ->method('update')
+            ->willReturn(true);
+
+        /**
+         * Re-instantiate plugin class to include amended store repository mock.
+         */
+        $this->plugin = new Plugin($this->stagingSpecialPriceModel, $this->storeRepository);
 
         $result = $this->plugin->aroundMapProductDataForSave(
             $this->subject,
