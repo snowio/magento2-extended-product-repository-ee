@@ -1,4 +1,5 @@
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Api/etc/extension_attributes.xsd"><extension_attributes for="Magento\Catalog\Api\Data\ProductInterface">
-        <attribute code="special_price" type="Magento\Catalog\Api\Data\SpecialPriceInterface[]" />
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Api/etc/extension_attributes.xsd">
+    <extension_attributes for="Magento\Catalog\Api\Data\ProductInterface">
+        <attribute code="special_price" type="SnowIO\ExtendedProductRepositoryEE\Api\Data\SpecialPriceMappingInterface[]" />
     </extension_attributes>
 </config>
