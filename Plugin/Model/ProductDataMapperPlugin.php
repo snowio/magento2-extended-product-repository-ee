@@ -98,9 +98,10 @@ class ProductDataMapperPlugin
                 $price->setStoreId($store->getId());
             }
             /**
-             * We now need to transform SpecialPriceMappingInterface into vanilla SpecialPriceInterface.
-             * This is to ensure vanilla update functionality works.
+             * SpecialPriceMappingInterface will not be accepted in the vanilla functions used to update special prices.
+             * We need to create vanilla SpecialPriceInterface instances from our SpecialPriceMappingInterface data.
              *
+             * Example of SpecialPriceInterface instance being required in vanilla functionality:
              * @see \Magento\CatalogStaging\Model\ResourceModel\Product\Price\SpecialPrice::priceSelectionsAreEqual
              */
             $specialPriceClone = clone $this->specialPrice;
