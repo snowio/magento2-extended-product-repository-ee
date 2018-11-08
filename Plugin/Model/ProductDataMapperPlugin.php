@@ -116,14 +116,16 @@ class ProductDataMapperPlugin
                 ->setPriceTo($price->getPriceTo());
         }
 
-        /**
-         * $specialPrices = [
-         *     \Magento\Catalog\Api\Data\SpecialPriceInterface,
-         *     \Magento\Catalog\Api\Data\SpecialPriceInterface,
-         *     ...
-         * ]
-         */
-        $this->stagingSpecialPriceModel->update($specialPrices);
+        if (!empty($specialPrices)) {
+            /**
+             * $specialPrices = [
+             *     \Magento\Catalog\Api\Data\SpecialPriceInterface,
+             *     \Magento\Catalog\Api\Data\SpecialPriceInterface,
+             *     ...
+             * ]
+             */
+            $this->stagingSpecialPriceModel->update($specialPrices);
+        }
     }
 
     /**
