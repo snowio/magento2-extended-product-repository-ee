@@ -80,6 +80,9 @@ class ProductDataMapperPlugin
                 throw new LocalizedException(new Phrase(
                     'Missing data from special_price extension attribute payload'
                 ));
+            } elseif (strtotime($price->getPriceFrom()) < time()) {
+                // If outdated special price, ignore.
+                continue;
             }
             /**
              * IMPORTANT:

@@ -193,13 +193,13 @@ class ProductDataMapperPluginTest extends TestCase
         /**
          * Successful calls to aroundMapProductDataForSave return void.
          */
-        $this->assertEquals(null, $result);
+        $this->assertEquals($expected, $result);
     }
 
     public function dataForAroundMapProductDataForSave()
     {
         return [
-            'Invalid payload' => [
+            'Invalid payload - No data' => [
                 $price = null,
                 $storeId = null,
                 $actualStoreId = null,
@@ -208,25 +208,36 @@ class ProductDataMapperPluginTest extends TestCase
                 $priceTo = null,
                 $expected = LocalizedException::class
             ],
-            'Valid payload with store code' => [
+            'Invalid payload - Outdated' => [
                 $price = '10.00',
                 // Store ID will likely be store code as we only have code in mappings.
                 $storeId = 'ms_uk',
                 // This is the actual store ID loaded from Magento, using the store code.
                 $actualStoreId = '1',
                 $sku = 'TEST01',
+                $priceFrom = '2015-12-04 13:48:05',
+                $priceTo = '2015-12-07 00:00:00',
+                $expected = null
+            ],
+            'Valid payload - With store code' => [
+                $price = '10.00',
+                // Store ID will likely be store code as we only have code in mappings.
+                $storeId = 'ms_uk',
+                // This is the actual store ID loaded from Magento, using the store code.
+                $actualStoreId = '1',
+                $sku = 'TEST02',
                 $priceFrom = '2020-12-04 13:48:05',
                 $priceTo = '2020-12-07 00:00:00',
                 // Successful calls to aroundMapProductDataForSave return void.
                 $expected = null
             ],
-            'Valid payload with store id' => [
+            'Valid payload - With store id' => [
                 $price = '10.00',
                 // Also handle cases where correct store id is passed in payload.
                 $storeId = '1',
                 // Actual store ID not loaded as store ID passes in payload.
                 $actualStoreId = null,
-                $sku = 'TEST01',
+                $sku = 'TEST03',
                 $priceFrom = '2020-12-04 13:48:05',
                 $priceTo = '2020-12-07 00:00:00',
                 // Successful calls to aroundMapProductDataForSave return void.
