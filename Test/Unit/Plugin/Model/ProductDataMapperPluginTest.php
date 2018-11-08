@@ -135,30 +135,7 @@ class ProductDataMapperPluginTest extends TestCase
         $expected
     )
     {
-        $this->specialPriceMapping
-            ->expects($this->any())
-            ->method('getPrice')
-            ->willReturn($price);
-
-        $this->specialPriceMapping
-            ->expects($this->any())
-            ->method('getStoreId')
-            ->willReturn($storeId);
-
-        $this->specialPriceMapping
-            ->expects($this->any())
-            ->method('getSku')
-            ->willReturn($sku);
-
-        $this->specialPriceMapping
-            ->expects($this->any())
-            ->method('getPriceFrom')
-            ->willReturn($priceFrom);
-
-        $this->specialPriceMapping
-            ->expects($this->any())
-            ->method('getPriceTo')
-            ->willReturn($priceTo);
+        $this->mockSpecialPriceMethods($price, $storeId, $sku, $priceFrom, $priceTo);
 
         $this->extensionAttributes
             ->expects($this->any())
@@ -174,7 +151,7 @@ class ProductDataMapperPluginTest extends TestCase
          * Actual store id is set from data provider if payload includes store code instead of store id.
          * We need to mock that the store id actually gets set to the special price, not the code.
          */
-        if(!is_null($actualStoreId)) {
+        if (!is_null($actualStoreId)) {
             $this->store
                 ->expects($this->any())
                 ->method('getId')
@@ -256,6 +233,42 @@ class ProductDataMapperPluginTest extends TestCase
                 $expected = null
             ],
         ];
+    }
+
+    /**
+     * @author Liam Toohey (lt@amp.co)
+     * @param $price
+     * @param $storeId
+     * @param $sku
+     * @param $priceFrom
+     * @param $priceTo
+     */
+    protected function mockSpecialPriceMethods($price, $storeId, $sku, $priceFrom, $priceTo)
+    {
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getPrice')
+            ->willReturn($price);
+
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getStoreId')
+            ->willReturn($storeId);
+
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getSku')
+            ->willReturn($sku);
+
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getPriceFrom')
+            ->willReturn($priceFrom);
+
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getPriceTo')
+            ->willReturn($priceTo);
     }
 
     /**
