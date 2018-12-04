@@ -3,4 +3,5 @@
     <type name="SnowIO\ExtendedProductRepository\Model\ProductDataMapper">
         <plugin name="ExtendedProductRepositoryDataMapperPlugin" type="SnowIO\ExtendedProductRepositoryEE\Plugin\Model\ProductDataMapperPlugin" disabled="false"/>
     </type>
+    <preference for="SnowIO\ExtendedProductRepositoryEE\Api\Data\SpecialPriceMappingInterface" type="SnowIO\ExtendedProductRepositoryEE\Model\SpecialPriceMapping" />
 </config>

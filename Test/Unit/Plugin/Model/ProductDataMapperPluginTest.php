@@ -6,9 +6,10 @@ use PHPUnit\Framework\TestCase as TestCase;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Api\Data\ProductExtensionInterface;
+use SnowIO\ExtendedProductRepositoryEE\Model\SpecialPriceMapping;
 use SnowIO\ExtendedProductRepositoryEE\Plugin\Model\ProductDataMapperPlugin as Plugin;
 use SnowIO\ExtendedProductRepository\Model\ProductDataMapper;
-use Magento\Catalog\Api\Data\SpecialPriceInterface;
+use SnowIO\ExtendedProductRepositoryEE\Test\Unit\Fixture\SpecialPrice as SpecialPriceFixture;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\CatalogStaging\Model\ResourceModel\Product\Price\SpecialPrice;
 use Magento\Store\Model\StoreRepository;
@@ -18,6 +19,7 @@ class ProductDataMapperPluginTest extends TestCase
 {
     private $product;
     private $extensionAttributes;
+    private $specialPriceMapping;
     private $specialPrice;
     private $subject;
     private $plugin;
@@ -29,6 +31,9 @@ class ProductDataMapperPluginTest extends TestCase
     {
         $om = new ObjectManager($this);
 
+        /**
+         * BEGIN CREATION OF MOCK CLASSES.
+         */
         $this->product = $this
             ->getMockBuilder(Product::class)
             ->disableOriginalConstructor()
@@ -40,8 +45,14 @@ class ProductDataMapperPluginTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->specialPrice = $this
-            ->getMockBuilder(SpecialPriceInterface::class)
+        /**
+         * This class will be used for getting/setting data.
+         * @see \SnowIO\ExtendedProductRepositoryEE\Test\Unit\Plugin\Model\ProductDataMapperPluginTest::testMapProductDataWithPayloads
+         */
+        $this->specialPrice = new SpecialPriceFixture();
+
+        $this->specialPriceMapping = $this
+            ->getMockBuilder(SpecialPriceMapping::class)
             ->setMethods([
                 'setPrice',
                 'setStoreId',
@@ -76,9 +87,12 @@ class ProductDataMapperPluginTest extends TestCase
             ->setMethods(['getId'])
             ->disableOriginalConstructor()
             ->getMock();
+        /**
+         * END CREATION OF MOCK CLASSES.
+         */
 
+        // Create subject class required in constructor for plugin class.
         $this->subject = $om->getObject(ProductDataMapper::class);
-        $this->plugin = new Plugin($this->stagingSpecialPriceModel, $this->storeRepository);
     }
 
     /**
@@ -93,31 +107,8 @@ class ProductDataMapperPluginTest extends TestCase
             ->method('getExtensionAttributes')
             ->willReturn(null);
 
-        $result = $this->plugin->aroundMapProductDataForSave(
-            $this->subject,
-            $this->mockProceedForPlugin(),
-            $this->product
-        );
-
-        $this->assertNull($result);
-    }
-
-    /**
-     * Test that a product with extension attributes, but without special price extension attribute does nothing.
-     *
-     * @author Liam Toohey (lt@amp.co)
-     */
-    public function testMapProductDataForSaveNoSpecialPriceExtensionAttribute()
-    {
-        $this->extensionAttributes
-            ->expects($this->any())
-            ->method('getSpecialPrice')
-            ->willReturn(null);
-
-        $this->product
-            ->expects($this->any())
-            ->method('getExtensionAttributes')
-            ->willReturn($this->extensionAttributes);
+        // Create actual testable class
+        $this->plugin = new Plugin($this->stagingSpecialPriceModel, $this->storeRepository, $this->specialPrice);
 
         $result = $this->plugin->aroundMapProductDataForSave(
             $this->subject,
@@ -126,88 +117,54 @@ class ProductDataMapperPluginTest extends TestCase
         );
 
         $this->assertNull($result);
-    }
-
-    /**
-     * Test that a product with an invalid special price payload throws exception.
-     *
-     * @author Liam Toohey (lt@amp.co)
-     */
-    public function testMapProductDataForSaveInvalidPayload()
-    {
-        $this->specialPrice
-            ->expects($this->any())
-            ->method('getPrice')
-            ->willReturn(null);
-
-        $this->extensionAttributes
-            ->expects($this->any())
-            ->method('getSpecialPrice')
-            ->willReturn([$this->specialPrice]);
-
-        $this->product
-            ->expects($this->any())
-            ->method('getExtensionAttributes')
-            ->willReturn($this->extensionAttributes);
-
-        $this->expectException(LocalizedException::class);
-
-        $this->plugin->aroundMapProductDataForSave(
-            $this->subject,
-            $this->mockProceedForPlugin(),
-            $this->product
-        );
     }
 
     /**
      * Test that a product valid special price payload returns null (void method).
      *
      * @author Liam Toohey (lt@amp.co)
+     * @dataProvider dataForAroundMapProductDataForSave
      */
-    public function testMapProductDataForSaveValidPayload()
+    public function testMapProductDataWithPayloads(
+        $price,
+        $storeId,
+        $actualStoreId,
+        $sku,
+        $priceFrom,
+        $priceTo,
+        $expected
+    )
     {
-        $this->specialPrice
-            ->expects($this->once())
-            ->method('getPrice')
-            ->willReturn(10.00);
-
-        $this->specialPrice
-            ->expects($this->any())
-            ->method('getStoreId')
-            ->willReturn("ms_uk");
-
-        $this->specialPrice
-            ->expects($this->once())
-            ->method('getSku')
-            ->willReturn('SKUTEST');
-
-        $this->specialPrice
-            ->expects($this->once())
-            ->method('getPriceFrom')
-            ->willReturn('2018-12-12 13:48:05');
-
-        $this->specialPrice
-            ->expects($this->once())
-            ->method('getPriceTo')
-            ->willReturn('2018-12-19 00:00:00');
+        $this->mockSpecialPriceMethods($price, $storeId, $sku, $priceFrom, $priceTo);
 
         $this->extensionAttributes
-            ->expects($this->once())
+            ->expects($this->any())
             ->method('getSpecialPrice')
-            ->willReturn([$this->specialPrice]);
+            ->willReturn([$this->specialPriceMapping]);
 
         $this->product
-            ->expects($this->once())
+            ->expects($this->any())
             ->method('getExtensionAttributes')
             ->willReturn($this->extensionAttributes);
 
-        $this->store
-            ->expects($this->once())
-            ->method('getId')
-            ->willReturn("1");
+        /**
+         * Actual store id is set from data provider if payload includes store code instead of store id.
+         * We need to mock that the store id actually gets set to the special price, not the code.
+         */
+        if (!is_null($actualStoreId)) {
+            $this->store
+                ->expects($this->any())
+                ->method('getId')
+                ->willReturn($actualStoreId);
+
+            $this->specialPriceMapping
+                ->expects($this->any())
+                ->method('getStoreId')
+                ->willReturn($actualStoreId);
+        }
 
         $this->storeRepository
-            ->expects($this->once())
+            ->expects($this->any())
             ->method('get')
             ->willReturn($this->store);
 
@@ -216,14 +173,16 @@ class ProductDataMapperPluginTest extends TestCase
          * If we make it to this call, the payload is valid and this function should return true.
          */
         $this->stagingSpecialPriceModel
-            ->expects($this->once())
+            ->expects($this->any())
             ->method('update')
             ->willReturn(true);
 
-        /**
-         * Re-instantiate plugin class to include amended store repository mock.
-         */
-        $this->plugin = new Plugin($this->stagingSpecialPriceModel, $this->storeRepository);
+        // Create actual testable class
+        $this->plugin = new Plugin($this->stagingSpecialPriceModel, $this->storeRepository, $this->specialPrice);
+
+        if ($expected === LocalizedException::class) {
+            $this->expectException(LocalizedException::class);
+        }
 
         $result = $this->plugin->aroundMapProductDataForSave(
             $this->subject,
@@ -234,7 +193,93 @@ class ProductDataMapperPluginTest extends TestCase
         /**
          * Successful calls to aroundMapProductDataForSave return void.
          */
-        $this->assertEquals(null, $result);
+        $this->assertEquals($expected, $result);
+    }
+
+    public function dataForAroundMapProductDataForSave()
+    {
+        return [
+            'Invalid payload - No data' => [
+                $price = null,
+                $storeId = null,
+                $actualStoreId = null,
+                $sku = null,
+                $priceFrom = null,
+                $priceTo = null,
+                $expected = LocalizedException::class
+            ],
+            'Invalid payload - Outdated' => [
+                $price = '10.00',
+                // Store ID will likely be store code as we only have code in mappings.
+                $storeId = 'ms_uk',
+                // This is the actual store ID loaded from Magento, using the store code.
+                $actualStoreId = '1',
+                $sku = 'TEST01',
+                $priceFrom = '2015-12-04 13:48:05',
+                $priceTo = '2015-12-07 00:00:00',
+                $expected = null
+            ],
+            'Valid payload - With store code' => [
+                $price = '10.00',
+                // Store ID will likely be store code as we only have code in mappings.
+                $storeId = 'ms_uk',
+                // This is the actual store ID loaded from Magento, using the store code.
+                $actualStoreId = '1',
+                $sku = 'TEST02',
+                $priceFrom = '2020-12-04 13:48:05',
+                $priceTo = '2020-12-07 00:00:00',
+                // Successful calls to aroundMapProductDataForSave return void.
+                $expected = null
+            ],
+            'Valid payload - With store id' => [
+                $price = '10.00',
+                // Also handle cases where correct store id is passed in payload.
+                $storeId = '1',
+                // Actual store ID not loaded as store ID passes in payload.
+                $actualStoreId = null,
+                $sku = 'TEST03',
+                $priceFrom = '2020-12-04 13:48:05',
+                $priceTo = '2020-12-07 00:00:00',
+                // Successful calls to aroundMapProductDataForSave return void.
+                $expected = null
+            ],
+        ];
+    }
+
+    /**
+     * @author Liam Toohey (lt@amp.co)
+     * @param $price
+     * @param $storeId
+     * @param $sku
+     * @param $priceFrom
+     * @param $priceTo
+     */
+    protected function mockSpecialPriceMethods($price, $storeId, $sku, $priceFrom, $priceTo)
+    {
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getPrice')
+            ->willReturn($price);
+
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getStoreId')
+            ->willReturn($storeId);
+
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getSku')
+            ->willReturn($sku);
+
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getPriceFrom')
+            ->willReturn($priceFrom);
+
+        $this->specialPriceMapping
+            ->expects($this->any())
+            ->method('getPriceTo')
+            ->willReturn($priceTo);
     }
 
     /**
