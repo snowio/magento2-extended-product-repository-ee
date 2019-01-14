@@ -76,7 +76,12 @@ class ProductDataMapperPlugin
         $specialPrices = [];
         /** @var \SnowIO\ExtendedProductRepositoryEE\Api\Data\SpecialPriceMappingInterface $price */
         foreach ($prices as $price) {
+
             if (!$this->validatePricePayload($price)) {
+                if ($price->getPrice() === (float)0) {
+                    // Ignore 0 prices
+                    continue;
+                }
                 throw new LocalizedException(new Phrase(
                     'Missing data from special_price extension attribute payload'
                 ));
