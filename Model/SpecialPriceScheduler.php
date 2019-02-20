@@ -1,7 +1,8 @@
 <?php
 
-namespace SnowIO\ExtendedProductRepositoryEE\Plugin\Model;
+namespace SnowIO\ExtendedProductRepositoryEE\Model;
 
+use mysql_xdevapi\Exception;
 use SnowIO\ExtendedProductRepository\Model\ProductDataMapper;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\Data\ProductExtensionInterface;
@@ -12,8 +13,9 @@ use Magento\CatalogStaging\Model\ResourceModel\Product\Price\SpecialPrice;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Catalog\Api\Data\SpecialPriceInterface;
+use Magento\Staging\Model\ResourceModel\Db\CampaignValidator;
 
-class ProductDataMapperPlugin
+class SpecialPriceScheduler
 {
     /** @var SpecialPrice  */
     private $stagingSpecialPriceModel;
@@ -21,7 +23,8 @@ class ProductDataMapperPlugin
     private $storeRepository;
     /** @var SpecialPriceInterface  */
     private $specialPrice;
-
+    /** @var CampaignValidator  */
+    private $campaignValidator;
     /**
      * ProductDataMapperPlugin constructor.
      * @param SpecialPrice $stagingSpecialPriceModel
@@ -30,52 +33,32 @@ class ProductDataMapperPlugin
     public function __construct(
         SpecialPrice $stagingSpecialPriceModel,
         StoreRepositoryInterface $storeRepository,
-        SpecialPriceInterface $specialPrice
+        SpecialPriceInterface $specialPrice,
+        CampaignValidator $campaignValidator
     )
     {
         $this->stagingSpecialPriceModel = $stagingSpecialPriceModel;
         $this->storeRepository = $storeRepository;
         $this->specialPrice = $specialPrice;
+        $this->campaignValidator = $campaignValidator; 
     }
 
     /**
-     * @author Liam Toohey (lt@amp.co)
-     * @param ProductDataMapper $subject
-     * @param \Closure $proceed
-     * @param ProductInterface $product
-     * @return mixed|void
+     * @param array $prices
      * @throws LocalizedException
+     * @throws NoSuchEntityException
      * @throws \Magento\Framework\Exception\CouldNotSaveException
      */
-    public function aroundMapProductDataForSave(ProductDataMapper $subject, \Closure $proceed, ProductInterface $product)
+    public function mapProductSpecialPrices(array $prices)
     {
-        /**
-         * Original function has no return value.
-         */
-        $proceed($product);
-
-        if (!$extensionAttributes = $product->getExtensionAttributes()) {
-            return;
-        }
-
-        $this->mapProductSpecialPrices($extensionAttributes);
-    }
-
-    /**
-     * @author Liam Toohey (lt@amp.co)
-     * @param ProductExtensionInterface $extensionAttributes
-     * @throws LocalizedException
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     */
-    private function mapProductSpecialPrices(ProductExtensionInterface $extensionAttributes)
-    {
-        if (null === $prices = $extensionAttributes->getSpecialPrice()) {
-            return;
-        }
-
         $specialPrices = [];
         /** @var \SnowIO\ExtendedProductRepositoryEE\Api\Data\SpecialPriceMappingInterface $price */
         foreach ($prices as $price) {
+            if (!$price instanceof SpecialPriceMappingInterface) {
+                throw new LocalizedException(new Phrase(
+                    'Scheduled price payload is not instance of SpecialPriceMappingInterface'
+                ));
+            }
             if (!$this->validatePricePayload($price)) {
                 if ($price->getPrice() === (float)0) {
                     // Ignore 0 prices
@@ -84,7 +67,7 @@ class ProductDataMapperPlugin
                 throw new LocalizedException(new Phrase(
                     'Missing data from special_price extension attribute payload'
                 ));
-            } elseif (strtotime($price->getPriceFrom()) < time()) {
+            } elseif (strtotime($price->getPriceTo()) < time()) {
                 // If outdated special price, ignore.
                 continue;
             }
@@ -119,7 +102,6 @@ class ProductDataMapperPlugin
                 ->setPriceFrom($price->getPriceFrom())
                 ->setPriceTo($price->getPriceTo());
         }
-
         if (!empty($specialPrices)) {
             /**
              * $specialPrices = [
@@ -139,12 +121,11 @@ class ProductDataMapperPlugin
      */
     private function validatePricePayload(SpecialPriceMappingInterface $price)
     {
-        if (
-            !$price->getPrice() ||
+        if (!$price->getPrice() ||
             !$price->getStoreId() ||
             !$price->getSku() ||
-            !$price->getPriceFrom() ||
-            !$price->getPriceTo()
+            (!$price->getPriceFrom() ||
+            !$price->getPriceTo())
         ) {
             return false;
         }
