@@ -14,6 +14,7 @@ use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Catalog\Api\Data\SpecialPriceInterface;
 use Magento\Staging\Model\ResourceModel\Db\CampaignValidator;
+use Magento\Staging\Model\VersionManager\Proxy as VersionManager;
 
 class SpecialPriceScheduler
 {
@@ -40,7 +41,7 @@ class SpecialPriceScheduler
         $this->stagingSpecialPriceModel = $stagingSpecialPriceModel;
         $this->storeRepository = $storeRepository;
         $this->specialPrice = $specialPrice;
-        $this->campaignValidator = $campaignValidator; 
+        $this->campaignValidator = $campaignValidator;
     }
 
     /**
@@ -67,10 +68,31 @@ class SpecialPriceScheduler
                 throw new LocalizedException(new Phrase(
                     'Missing data from special_price extension attribute payload'
                 ));
-            } elseif (strtotime($price->getPriceTo()) < time()) {
+            } elseif ($price->getPriceTo() && strtotime($price->getPriceTo()) < time()) {
                 // If outdated special price, ignore.
                 continue;
             }
+
+            /**
+             * To schedule a special price, a to and from date MUST be provided.
+             * These dates are necessary as they are used to create versions of the product.
+             *
+             * When a product is created with no updates, the created_in and updated_in dates span the maximum time available.
+             * This means this version of the product will always be used.
+             *
+             * If we have no to and from date, we need to follow this same methodology:
+             *
+             * - If no special from date, scheduled price has been valid since start of time.
+             * - If no special to date, scheduled price is valid until end of time.
+             *
+             * @see \Magento\Staging\Model\Operation\Create::execute
+             */
+            if (!$price->getPriceFrom()) {
+                $price->setPriceTo(date('Y-m-d H:i:s', 1));
+            } elseif (!$price->getPriceTo()) {
+                $price->setPriceTo(date('Y-m-d H:i:s', VersionManager::MAX_VERSION));
+            }
+
             /**
              * IMPORTANT:
              *
@@ -124,8 +146,8 @@ class SpecialPriceScheduler
         if (!$price->getPrice() ||
             is_null($price->getStoreId()) ||
             !$price->getSku() ||
-            (!$price->getPriceFrom() ||
-            !$price->getPriceTo())
+            (!$price->getPriceFrom() &&
+                !$price->getPriceTo())
         ) {
             return false;
         }
