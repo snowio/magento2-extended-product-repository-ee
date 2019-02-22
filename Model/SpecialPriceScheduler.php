@@ -122,7 +122,7 @@ class SpecialPriceScheduler
     private function validatePricePayload(SpecialPriceMappingInterface $price)
     {
         if (!$price->getPrice() ||
-            !$price->getStoreId() ||
+            is_null($price->getStoreId()) ||
             !$price->getSku() ||
             (!$price->getPriceFrom() ||
             !$price->getPriceTo())
