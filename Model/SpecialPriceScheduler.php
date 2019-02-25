@@ -88,7 +88,7 @@ class SpecialPriceScheduler
              * @see \Magento\Staging\Model\Operation\Create::execute
              */
             if (!$price->getPriceFrom()) {
-                $price->setPriceTo(date('Y-m-d H:i:s', 1));
+                $price->setPriceFrom(date('Y-m-d H:i:s', 1));
             } elseif (!$price->getPriceTo()) {
                 $price->setPriceTo(date('Y-m-d H:i:s', VersionManager::MAX_VERSION));
             }
