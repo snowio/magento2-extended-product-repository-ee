@@ -2,7 +2,6 @@
 
 namespace SnowIO\ExtendedProductRepositoryEE\Model;
 
-use mysql_xdevapi\Exception;
 use SnowIO\ExtendedProductRepository\Model\ProductDataMapper;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\Data\ProductExtensionInterface;
