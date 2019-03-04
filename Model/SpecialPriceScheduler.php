@@ -146,7 +146,7 @@ class SpecialPriceScheduler
             is_null($price->getStoreId()) ||
             !$price->getSku() ||
             (!$price->getPriceFrom() &&
-                !$price->getPriceTo())
+            !$price->getPriceTo())
         ) {
             return false;
         }
