@@ -19,9 +19,9 @@ as this is usually more accessible. Example payload in extension_attributes belo
                     {
                         "store_id": "admin",
                         "price": "10.84",
-                        "sku": "13H4442KIT",
-                        "price_from": "2017-12-03 13:48:06",
-                        "price_to": "2017-12-04 00:00:00"
+                        "sku": "SKU01",
+                        "price_from": "2019-12-03 13:48:06",
+                        "price_to": "2020-12-04 00:00:00"
                     }
                 ]
             }
@@ -31,4 +31,4 @@ A successful requests will create the product special prices in accordance to Ma
 This means the special prices will be created as a scheduled change (more info found in Magento docs).
 
 As a side note, scheduled changes will create multiple versions of a single product. These versions are then active between 
-the dates specified.    
+the dates specified.
