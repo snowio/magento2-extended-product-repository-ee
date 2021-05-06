@@ -14,7 +14,7 @@
         "magento/framework": "^100|^101|^102|^103",
         "magento/module-catalog": "^101|^102|^103",
         "magento/module-catalog-staging": "^100.2.2",
-        "snowio/magento2-extended-product-repository": "^2.2|^3.0"
+        "snowio/magento2-extended-product-repository": "^3.0.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^4.1|^6"
