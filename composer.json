@@ -12,7 +12,7 @@
     "require": {
         "php": ">=7",
         "magento/framework": "^100|^101|^102|^103",
-        "magento/module-catalog": "^101|^102|^103",
+        "magento/module-catalog": "^101|^102|^103|^104",
         "magento/module-catalog-staging": "^100.2.2",
         "snowio/magento2-extended-product-repository": "^3.0"
     },
