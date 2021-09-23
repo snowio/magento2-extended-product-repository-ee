@@ -5,14 +5,14 @@ namespace SnowIO\ExtendedProductRepositoryEE\Observer;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
-use SnowIO\ExtendedProductRepositoryEE\Model\SpecialPriceScheduler;
+use SnowIO\ExtendedProductRepositoryEE\Model\SpecialPriceScheduler\Proxy as SpecialPriceSchedulerProxy;
 
 class EntitySaveAfter implements ObserverInterface
 {
     /** @var SpecialPriceScheduler  */
     protected $specialPriceScheduler;
 
-    public function __construct(SpecialPriceScheduler $specialPriceScheduler)
+    public function __construct(SpecialPriceSchedulerProxy $specialPriceScheduler)
     {
         $this->specialPriceScheduler = $specialPriceScheduler;
     }
